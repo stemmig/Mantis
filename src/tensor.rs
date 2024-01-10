@@ -1,7 +1,10 @@
+use std::fmt::{Debug, Formatter};
 use std::sync::Arc;
 use crate::array::NDArray;
-use crate::operations::{Backend, BackendData, Op};
-use crate::operations::Backend::Array;
+use crate::operations::{ Op};
+use crate::backend::{Backend, BackendData};
+use crate::backend::Backend::{Array, Cpu, Metal};
+use crate::DType;
 
 pub struct Tensor {
     op: Op,
@@ -11,7 +14,7 @@ pub struct Tensor {
     backend: Backend,
 }
 
-pub trait Data where Self: Sized {
+pub trait Data where Self: Sized,  {
     fn new() -> Self;
 
     fn zeros(shape: Vec<usize>) -> Self;
@@ -25,11 +28,26 @@ pub trait Data where Self: Sized {
 impl Tensor {
     // Keeping track of compute graph with be handled in Tensor impls,
     // Actually modifying the underlying tensor on the backend will be done as part of data impls
-    pub fn zeros(dims: Vec<usize>, backend: Backend) -> Self {
+    pub fn zeros(dims: Vec<usize>, backend: Backend, dtype: DType) -> Self {
         let init_data: BackendData = match backend {
             Array => BackendData::Array(NDArray::zeros(dims.clone())),
-            Backend::Cpu => BackendData::Cpu,
-            Backend::Metal => BackendData::Metal,
+            Cpu => BackendData::Cpu,
+            Metal => BackendData::Metal,
+        };
+        Tensor {
+            op: Op::None,
+            data: Arc::new(init_data),
+            is_mutable: false,
+            shape: dims.clone(),
+            backend: Array,
+        }
+    }
+
+    pub fn ones(dims: Vec<usize>, backend: Backend, dtype: DType) -> Self {
+        let init_data: BackendData = match backend {
+            Array => BackendData::Array(NDArray::ones(dims.clone())),
+            Cpu => BackendData::Cpu,
+            Metal => BackendData::Metal,
         };
         Tensor {
             op: Op::None,

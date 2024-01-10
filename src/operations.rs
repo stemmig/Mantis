@@ -7,15 +7,3 @@ pub enum Op {
     Div,
     None
 }
-
-pub enum Backend {
-    Array,
-    Cpu,
-    Metal
-}
-
-pub enum BackendData {
-    Array(NDArray<f32>),
-    Cpu,
-    Metal,
-}

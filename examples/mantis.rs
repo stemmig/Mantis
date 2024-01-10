@@ -1,7 +1,11 @@
 extern crate mantis;
 
-use mantis::Tensor;
+use mantis::{Tensor, Backend, DType};
 
 fn main() {
-    let tensor = Tensor::new();
+    let tensor_a = Tensor::zeros(vec![3, 4], Backend::Array, DType::F32);
+    let tensor_b = Tensor::ones(vec![3, 4], Backend::Array, DType::F32);
+
+    let tensor_c = tensor_a.add(tensor_b);
+    // println!("{:?}", tensor_c);
 }
