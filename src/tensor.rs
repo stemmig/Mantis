@@ -1,5 +1,7 @@
 use std::sync::Arc;
+use crate::array::NDArray;
 use crate::operations::{Backend, BackendData, Op};
+use crate::operations::Backend::Array;
 
 pub struct Tensor {
     op: Op,
@@ -23,16 +25,18 @@ pub trait Data where Self: Sized {
 impl Tensor {
     // Keeping track of compute graph with be handled in Tensor impls,
     // Actually modifying the underlying tensor on the backend will be done as part of data impls
-    // pub fn new(op: Op, ) -> Self {
-    //     Tensor {
-    //
-    //     }
-    // }
-    //
-    // pub fn zeros(dims: Vec<usize>) {
-    //     Tensor {
-    //         None,
-    //
-    //     }
-    // }
+    pub fn zeros(dims: Vec<usize>, backend: Backend) -> Self {
+        let init_data: BackendData = match backend {
+            Array => BackendData::Array(NDArray::zeros(dims.clone())),
+            Backend::Cpu => BackendData::Cpu,
+            Backend::Metal => BackendData::Metal,
+        };
+        Tensor {
+            op: Op::None,
+            data: Arc::new(init_data),
+            is_mutable: false,
+            shape: dims.clone(),
+            backend: Array,
+        }
+    }
 }
