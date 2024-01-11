@@ -1,4 +1,4 @@
-use std::fmt::{Debug, Formatter};
+use std::fmt::{Debug};
 use std::sync::Arc;
 use crate::array::NDArray;
 use crate::operations::{ Op};
@@ -17,12 +17,11 @@ pub struct Tensor {
 pub trait Data where Self: Sized,  {
     fn new() -> Self;
 
-    fn zeros(shape: Vec<usize>) -> Self;
+    fn zeros(shape: Vec<usize>, dtype: DType) -> Self;
 
-    fn ones(shape: Vec<usize>) -> Self;
+    fn ones(shape: Vec<usize>, dtype: DType) -> Self;
 
     fn add(&self, rhs: &Self) -> Self;
-
 }
 
 impl Tensor {
@@ -30,7 +29,7 @@ impl Tensor {
     // Actually modifying the underlying tensor on the backend will be done as part of data impls
     pub fn zeros(dims: Vec<usize>, backend: Backend, dtype: DType) -> Self {
         let init_data: BackendData = match backend {
-            Array => BackendData::Array(NDArray::zeros(dims.clone())),
+            Array => BackendData::Array(NDArray::zeros(dims.clone(), dtype)),
             Cpu => BackendData::Cpu,
             Metal => BackendData::Metal,
         };
@@ -45,7 +44,7 @@ impl Tensor {
 
     pub fn ones(dims: Vec<usize>, backend: Backend, dtype: DType) -> Self {
         let init_data: BackendData = match backend {
-            Array => BackendData::Array(NDArray::ones(dims.clone())),
+            Array => BackendData::Array(NDArray::ones(dims.clone(), dtype)),
             Cpu => BackendData::Cpu,
             Metal => BackendData::Metal,
         };
