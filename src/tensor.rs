@@ -14,14 +14,13 @@ pub struct Tensor {
     backend: Backend,
 }
 
-pub trait Data where Self: Sized,  {
-    fn new() -> Self;
+pub trait Data where Self: Sized {
 
     fn zeros(shape: Vec<usize>, dtype: DType) -> Self;
 
     fn ones(shape: Vec<usize>, dtype: DType) -> Self;
 
-    fn add(&self, rhs: &Self) -> Self;
+    fn add(&self, rhs: &Self) -> Option<Self>;
 }
 
 impl Tensor {
