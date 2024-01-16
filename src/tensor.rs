@@ -16,9 +16,9 @@ pub struct Tensor {
 
 pub trait Data where Self: Sized {
 
-    fn zeros(shape: Vec<usize>, dtype: DType) -> Self;
+    fn zeros(&self, shape: Vec<usize>, dtype: DType) -> Self;
 
-    fn ones(shape: Vec<usize>, dtype: DType) -> Self;
+    fn ones(&self, shape: Vec<usize>, dtype: DType) -> Self;
 
     fn add(&self, rhs: &Self) -> Option<Self>;
 }
@@ -57,6 +57,17 @@ impl Tensor {
     }
 
     pub fn add(&self, rhs: &Self) -> Self {
-        todo!()
+        todo!();
+        // let lhs_read = self.data.read().unwrap();
+        // let rhs_read = rhs.data.read().unwrap();
+        // let _ = (*lhs_read).add;
+        //
+        // Tensor {
+        //     op: Op::Add,
+        //     data: Arc::new(RwLock::new()),
+        //     is_mutable: false,
+        //     shape: self.shape.clone(),
+        //     backend: self.backend.clone(),
+        // }
     }
 }

@@ -10,16 +10,16 @@ pub enum CpuArray
     F64Array(Array<f64, IxDyn>),
 }
 
-impl Data for CpuArray
+impl CpuArray
 {
-    fn zeros(shape: Vec<usize>, dtype: DType) -> Self {
+    pub fn zeros(shape: Vec<usize>, dtype: DType) -> Self {
         match dtype {
             DType::F32 => F32Array(Array::zeros(IxDyn(&shape))),
             DType::F64 => F64Array(Array::zeros(IxDyn(&shape)))
         }
     }
 
-    fn ones(shape: Vec<usize>, dtype: DType) -> Self {
+    pub(crate) fn ones(shape: Vec<usize>, dtype: DType) -> Self {
         match dtype {
             DType::F32 => F32Array(Array::ones(IxDyn(&shape))),
             DType::F64 => F64Array(Array::ones(IxDyn(&shape)))
