@@ -72,4 +72,8 @@ impl Tensor {
             backend: self.backend.clone(),
         }
     }
+
+    pub fn backward(&self) {
+
+    }
 }
