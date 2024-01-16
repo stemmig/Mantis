@@ -19,14 +19,14 @@ impl CpuArray
         }
     }
 
-    pub(crate) fn ones(shape: Vec<usize>, dtype: DType) -> Self {
+    pub fn ones(shape: Vec<usize>, dtype: DType) -> Self {
         match dtype {
             DType::F32 => F32Array(Array::ones(IxDyn(&shape))),
             DType::F64 => F64Array(Array::ones(IxDyn(&shape)))
         }
     }
 
-    fn add(&self, rhs: &Self) -> Option<Self> {
+    pub fn add(&self, rhs: &Self) -> Option<Self> {
         match (self, rhs) {
             (F32Array(ref a), F32Array(ref b)) => {
                 Some(F32Array(a.add(b)))

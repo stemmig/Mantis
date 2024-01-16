@@ -57,17 +57,21 @@ impl Tensor {
     }
 
     pub fn add(&self, rhs: &Self) -> Self {
-        todo!();
-        // let lhs_read = self.data.read().unwrap();
-        // let rhs_read = rhs.data.read().unwrap();
-        // let _ = (*lhs_read).add;
-        //
-        // Tensor {
-        //     op: Op::Add,
-        //     data: Arc::new(RwLock::new()),
-        //     is_mutable: false,
-        //     shape: self.shape.clone(),
-        //     backend: self.backend.clone(),
-        // }
+        let lhs_read = self.data.read().unwrap();
+        let rhs_read = rhs.data.read().unwrap();
+        let added = (*lhs_read).add(&*rhs_read);
+
+        let add_unwrap = match added {
+            Some(addition) => addition,
+            None => panic!("Could not perform addition!")
+        };
+
+        Tensor {
+            op: Op::Add,
+            data: Arc::new(RwLock::new(add_unwrap)),
+            is_mutable: false,
+            shape: self.shape.clone(),
+            backend: self.backend.clone(),
+        }
     }
 }

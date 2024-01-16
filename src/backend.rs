@@ -1,5 +1,6 @@
+use std::sync::RwLockReadGuard;
 use crate::array::{CpuArray};
-use crate::backend::BackendData::Metal;
+use crate::backend::BackendData::{Metal, Array, Cpu};
 use crate::DType;
 use crate::tensor::Data;
 
@@ -34,7 +35,11 @@ impl Data for BackendData {
         }
     }
 
-    fn add(&self, rhs: &Self) -> Option<Self> {
-        todo!()
+    fn add(&self, rhs:&Self) -> Option<Self> {
+        let addition = match (self, rhs) {
+            (Array(lhs), Array(rhs) ) => Some(Array((*lhs).add(rhs).unwrap())),
+            _ => None
+        };
+        addition
     }
 }
