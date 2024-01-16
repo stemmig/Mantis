@@ -1,5 +1,4 @@
-use num_traits::Zero;
-use crate::array::NDArray;
+use crate::array::{CpuArray};
 
 pub enum Backend {
     Array,
@@ -9,7 +8,7 @@ pub enum Backend {
 
 pub enum BackendData
 {
-    Array(NDArray),
+    Array(CpuArray),
     Cpu,
     Metal,
 }

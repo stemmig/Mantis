@@ -1,19 +1,17 @@
 use std::ops::Add;
-// Code for the NDarray backend
 use ndarray::{Array, Dimension, IxDyn};
-use crate::array::NDArray::{F32Array, F64Array};
+use crate::array::CpuArray::{F32Array, F64Array};
 use crate::DType;
 use crate::tensor::Data;
 
-pub enum NDArray
+pub enum CpuArray
 {
     F32Array(Array<f32, IxDyn>),
     F64Array(Array<f64, IxDyn>),
 }
 
-impl Data for NDArray
+impl Data for CpuArray
 {
-
     fn zeros(shape: Vec<usize>, dtype: DType) -> Self {
         match dtype {
             DType::F32 => F32Array(Array::zeros(IxDyn(&shape))),

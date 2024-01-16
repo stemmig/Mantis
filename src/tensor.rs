@@ -1,6 +1,6 @@
 use std::fmt::{Debug};
-use std::sync::Arc;
-use crate::array::NDArray;
+use std::sync::{Arc, RwLock};
+use crate::array::{CpuArray};
 use crate::operations::{ Op};
 use crate::backend::{Backend, BackendData};
 use crate::backend::Backend::{Array, Cpu, Metal};
@@ -8,7 +8,7 @@ use crate::DType;
 
 pub struct Tensor {
     op: Op,
-    data: Arc<BackendData>,
+    data: Arc<RwLock<BackendData>> ,
     is_mutable: bool,
     shape: Vec<usize>,
     backend: Backend,
@@ -28,13 +28,13 @@ impl Tensor {
     // Actually modifying the underlying tensor on the backend will be done as part of data impls
     pub fn zeros(dims: Vec<usize>, backend: Backend, dtype: DType) -> Self {
         let init_data: BackendData = match backend {
-            Array => BackendData::Array(NDArray::zeros(dims.clone(), dtype)),
+            Array => BackendData::Array(CpuArray::zeros(dims.clone(), dtype)),
             Cpu => BackendData::Cpu,
             Metal => BackendData::Metal,
         };
         Tensor {
             op: Op::None,
-            data: Arc::new(init_data),
+            data: Arc::new(RwLock::new(init_data)),
             is_mutable: false,
             shape: dims.clone(),
             backend: Array,
@@ -43,16 +43,20 @@ impl Tensor {
 
     pub fn ones(dims: Vec<usize>, backend: Backend, dtype: DType) -> Self {
         let init_data: BackendData = match backend {
-            Array => BackendData::Array(NDArray::ones(dims.clone(), dtype)),
+            Array => BackendData::Array(CpuArray::ones(dims.clone(), dtype)),
             Cpu => BackendData::Cpu,
             Metal => BackendData::Metal,
         };
         Tensor {
             op: Op::None,
-            data: Arc::new(init_data),
+            data: Arc::new(RwLock::new(init_data)),
             is_mutable: false,
             shape: dims.clone(),
             backend: Array,
         }
+    }
+
+    pub fn add(&self, rhs: &Self) -> Self {
+        todo!()
     }
 }
