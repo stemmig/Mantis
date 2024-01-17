@@ -77,3 +77,5 @@ impl Tensor {
 
     }
 }
+
+pub struct Parameter(Tensor);
