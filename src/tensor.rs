@@ -1,6 +1,7 @@
 use std::collections::{HashMap, VecDeque};
 use std::fmt::{Debug};
 use std::sync::{Arc, RwLock};
+use uuid::{Uuid};
 use crate::array::{CpuArray};
 use crate::operations::{ Op};
 use crate::backend::{Backend, BackendData};
@@ -14,6 +15,7 @@ pub struct Tensor_ {
     is_mutable: bool,
     shape: Vec<usize>,
     backend: Backend,
+    id: u128,
 }
 
 pub trait Data where Self: Sized {
@@ -31,6 +33,11 @@ pub trait Data where Self: Sized {
 pub struct Tensor(Arc<Tensor_>);
 
 impl Tensor {
+
+    pub fn uuid() -> u128 {
+        let uuid = Uuid::new_v4();
+        uuid.as_u128()
+    }
     // Keeping track of compute graph with be handled in Tensor impls,
     // Actually modifying the underlying tensor on the backend will be done as part of data impls
     pub fn zeros(dims: Vec<usize>, backend: Backend, dtype: DType) -> Self {
@@ -44,6 +51,7 @@ impl Tensor {
             is_mutable: false,
             shape: dims.clone(),
             backend,
+            id: Self::uuid(),
         }))
     }
 
@@ -58,6 +66,7 @@ impl Tensor {
             is_mutable: false,
             shape: dims.clone(),
             backend,
+            id: Self::uuid(),
         }))
     }
 
@@ -77,6 +86,7 @@ impl Tensor {
             is_mutable: false,
             shape: self.0.shape.clone(),
             backend: self.0.backend.clone(),
+            id: Self::uuid(),
         }))
     }
 
@@ -100,13 +110,16 @@ impl Tensor {
                 _ => ()
             }
         }
-
         sorted
     }
 
     pub fn backward(&self) -> Gradients {
         let mut grads = HashMap::new();
         let nodes = self.topo_sort();
+
+        for node in nodes {
+
+        }
 
         Gradients(grads)
     }
