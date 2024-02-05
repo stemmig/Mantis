@@ -5,8 +5,10 @@ use crate::tensor::Tensor_;
 pub struct Gradients(pub HashMap<u128, Tensor>);
 
 impl Gradients {
-    pub fn new() -> Self {
-        Gradients(HashMap::new())
+    pub fn new(tensor: &Tensor) -> Self {
+        Gradients(HashMap::from([
+            (tensor.id(), tensor.ones_like())
+        ]))
     }
 
     pub fn get(&self, tensor: &Tensor) -> Option<&Tensor> {

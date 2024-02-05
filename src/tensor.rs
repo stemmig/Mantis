@@ -128,7 +128,7 @@ impl Tensor {
     }
 
     pub fn backward(&self) -> Gradients {
-        let mut grads = Gradients::new();
+        let mut grads = Gradients::new(self);
         let nodes = self.topo_sort();
 
         for node in nodes {
