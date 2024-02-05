@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use crate::Tensor;
 
-pub struct Gradients(HashMap<i32, Tensor>);
+pub struct Gradients(pub HashMap<i32, Tensor>);
 
 impl Gradients {
 
