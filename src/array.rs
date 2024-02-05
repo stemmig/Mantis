@@ -1,4 +1,4 @@
-use std::ops::Add;
+use std::ops::{Add, Div, Mul, Sub};
 use ndarray::{Array, Dimension, IxDyn};
 use crate::array::CpuArray::{F32Array, F64Array};
 use crate::DType;
@@ -30,6 +30,31 @@ impl CpuArray
         match (self, rhs) {
             (F32Array(ref a), F32Array(ref b)) => {
                 Some(F32Array(a.add(b)))
+            }
+            _ => None
+        }
+    }
+
+    pub fn sub(&self, rhs: &Self) -> Option<Self> {
+        match (self, rhs) {
+            (F32Array(ref a), F32Array(ref b)) => {
+                Some(F32Array(a.sub(b)))
+            }
+            _ => None
+        }
+    }
+    pub fn mul(&self, rhs: &Self) -> Option<Self> {
+        match (self, rhs) {
+            (F32Array(ref a), F32Array(ref b)) => {
+                Some(F32Array(a.mul(b)))
+            }
+            _ => None
+        }
+    }
+    pub fn div(&self, rhs: &Self) -> Option<Self> {
+        match (self, rhs) {
+            (F32Array(ref a), F32Array(ref b)) => {
+                Some(F32Array(a.div(b)))
             }
             _ => None
         }

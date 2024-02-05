@@ -38,4 +38,28 @@ impl Data for BackendData {
         };
         addition
     }
+
+    fn sub(&self, rhs: &Self) -> Option<Self> {
+        let addition = match (self, rhs) {
+            (Cpu(lhs), Cpu(rhs) ) => Some(Cpu((*lhs).sub(rhs).unwrap())),
+            _ => None
+        };
+        addition
+    }
+
+    fn mul(&self, rhs: &Self) -> Option<Self> {
+        let addition = match (self, rhs) {
+            (Cpu(lhs), Cpu(rhs) ) => Some(Cpu((*lhs).mul(rhs).unwrap())),
+            _ => None
+        };
+        addition
+    }
+
+    fn div(&self, rhs: &Self) -> Option<Self> {
+        let addition = match (self, rhs) {
+            (Cpu(lhs), Cpu(rhs) ) => Some(Cpu((*lhs).div(rhs).unwrap())),
+            _ => None
+        };
+        addition
+    }
 }

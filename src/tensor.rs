@@ -27,6 +27,10 @@ pub trait Data where Self: Sized {
     fn ones(&self, shape: Vec<usize>, dtype: DType) -> Self;
 
     fn add(&self, rhs: &Self) -> Option<Self>;
+    fn sub(&self, rhs: &Self) -> Option<Self>;
+    fn mul(&self, rhs: &Self) -> Option<Self>;
+    fn div(&self, rhs: &Self) -> Option<Self>;
+
 }
 
 #[derive(Clone)]
@@ -103,6 +107,54 @@ impl Tensor {
         }))
     }
 
+    pub fn sub(&self, rhs: &Self) -> Self {
+        let lhs_read = self.0.data.read().unwrap();
+        let rhs_read = rhs.0.data.read().unwrap();
+        let data = (*lhs_read).sub(&*rhs_read).expect("Could not perform Sub!");
+
+        Tensor(Arc::new(Tensor_ {
+            op: Op::Add(self.clone(), rhs.clone()),
+            data: Arc::new(RwLock::new(data)),
+            is_mutable: false,
+            shape: self.0.shape.clone(),
+            backend: self.0.backend.clone(),
+            dtype: self.0.dtype.clone(),
+            id: Self::uuid(),
+        }))
+    }
+
+    pub fn mul(&self, rhs: &Self) -> Self {
+        let lhs_read = self.0.data.read().unwrap();
+        let rhs_read = rhs.0.data.read().unwrap();
+        let data = (*lhs_read).mul(&*rhs_read).expect("Could not perform Mul!");
+
+        Tensor(Arc::new(Tensor_ {
+            op: Op::Add(self.clone(), rhs.clone()),
+            data: Arc::new(RwLock::new(data)),
+            is_mutable: false,
+            shape: self.0.shape.clone(),
+            backend: self.0.backend.clone(),
+            dtype: self.0.dtype.clone(),
+            id: Self::uuid(),
+        }))
+    }
+
+    pub fn div(&self, rhs: &Self) -> Self {
+        let lhs_read = self.0.data.read().unwrap();
+        let rhs_read = rhs.0.data.read().unwrap();
+        let data = (*lhs_read).div(&*rhs_read).expect("Could not perform Div!");
+
+        Tensor(Arc::new(Tensor_ {
+            op: Op::Add(self.clone(), rhs.clone()),
+            data: Arc::new(RwLock::new(data)),
+            is_mutable: false,
+            shape: self.0.shape.clone(),
+            backend: self.0.backend.clone(),
+            dtype: self.0.dtype.clone(),
+            id: Self::uuid(),
+        }))
+    }
+
     fn topo_sort(&self) -> Vec<Tensor> {
         let mut queue: VecDeque<Tensor> = VecDeque::new();
         let mut sorted: Vec<Tensor> = Vec::new();
@@ -144,7 +196,18 @@ impl Tensor {
                     let rhs_grad = grads.get_or(&rhs);
                     *rhs_grad = rhs_grad.add(&grad);
                 },
-                _ => {}
+                Op::Sub(lhs, rhs) => {
+
+                },
+                Op::Mul(lhs, rhs) => {
+
+                },
+                Op::Div(lhs, rhs) => {
+
+                },
+                Op::None => {
+
+                }
             }
         }
         grads
