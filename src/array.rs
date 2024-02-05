@@ -26,6 +26,13 @@ impl CpuArray
         }
     }
 
+    pub fn fill(value:f64, shape: Vec<usize>, dtype: DType) -> Self {
+        match dtype {
+            DType::F32 => F32Array(Array::from_elem(IxDyn(&shape), value as f32)),
+            DType::F64 => F64Array(Array::from_elem(IxDyn(&shape), value))
+        }
+    }
+
     pub fn add(&self, rhs: &Self) -> Option<Self> {
         match (self, rhs) {
             (F32Array(ref a), F32Array(ref b)) => {

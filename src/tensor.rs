@@ -78,6 +78,22 @@ impl Tensor {
         }))
     }
 
+    pub fn fill(dims: Vec<usize>, value: f64, backend: Backend, dtype: DType) -> Self {
+        let init_data: BackendData = match backend {
+            Cpu => BackendData::Cpu(CpuArray::fill(value, dims.clone(), dtype.clone())),
+            Metal => BackendData::Metal,
+        };
+        Tensor(Arc::new(Tensor_ {
+            op: Op::None,
+            data: Arc::new(RwLock::new(init_data)),
+            is_mutable: false,
+            shape: dims.clone(),
+            backend: backend.clone(),
+            dtype: dtype.clone(),
+            id: Self::uuid(),
+        }))
+    }
+
     pub fn zeros_like(&self) -> Self {
         Tensor::zeros(self.shape(), self.backend(), self.dtype())
     }
