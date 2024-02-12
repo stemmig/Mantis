@@ -32,7 +32,7 @@ pub trait Data where Self: Sized {
     fn mul(&self, rhs: &Self) -> Option<Self>;
     fn div(&self, rhs: &Self) -> Option<Self>;
     fn get<T: Num + Copy + NumCast>(&self, index: Vec<usize>) -> Option<T>;
-
+    fn copy_from(&mut self, other: &Self) -> ();
 }
 
 #[derive(Clone)]
@@ -181,6 +181,11 @@ impl Tensor {
         self.0.data.read().unwrap()
     }
 
+    pub fn copy_from(&self, other: &Self) -> () {
+
+        self.0.data.write().unwrap().copy_from(other.backend_ref().deref());
+    }
+
     fn topo_sort(&self) -> Vec<Tensor> {
         let mut queue: VecDeque<Tensor> = VecDeque::new();
         let mut sorted: Vec<Tensor> = Vec::new();
@@ -268,7 +273,7 @@ pub struct Parameter(Tensor);
 
 #[cfg(test)]
 mod tests {
-    use std::ptr::eq;
+
     use super::*;
 
     #[test]

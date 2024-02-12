@@ -6,5 +6,7 @@ pub enum Op {
     Sub(Tensor, Tensor),
     Mul(Tensor, Tensor),
     Div(Tensor, Tensor),
+    // MatMul(Tensor, Tensor),
+    // ReLU(Tensor),
     None
 }

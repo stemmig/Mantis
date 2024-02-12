@@ -2,6 +2,7 @@ use std::ops::{Add, Div, Mul, Sub};
 use ndarray::{Array, Dimension, IxDyn};
 use num_traits::{Num, NumCast};
 use crate::array::CpuArray::{F32Array, F64Array};
+use crate::backend::BackendData;
 use crate::DType;
 
 pub enum CpuArray
@@ -75,6 +76,13 @@ impl CpuArray
         match val {
           Some(n) => NumCast::from(n),
             _ => None
+        }
+    }
+
+    pub fn copy_from(&mut self, other: &Self) {
+        match (self, other) {
+            (F32Array(arr1), F32Array(arr2)) => arr1.assign(arr2),
+            _ => ()
         }
     }
 }

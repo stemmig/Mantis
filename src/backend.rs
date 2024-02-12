@@ -1,3 +1,4 @@
+use std::ops::Deref;
 use std::sync::RwLockReadGuard;
 use num_traits::{Num, NumCast};
 use crate::array::{CpuArray};
@@ -70,5 +71,12 @@ impl Data for BackendData {
             _ => None
         };
         val
+    }
+
+    fn copy_from(&mut self, other: &Self) -> () {
+        match (self, other) {
+            (Cpu(into), Cpu(from) ) => into.copy_from(from),
+            _ => ()
+        }
     }
 }
