@@ -271,15 +271,19 @@ mod tests {
     #[test]
     fn test_zeros() {
         let tensor = Tensor::zeros(vec![2, 3], Cpu, DType::F32);
+        assert_eq!(tensor.get(vec![1, 1]), Some(0))
     }
 
     #[test]
     fn test_ones() {
         let tensor = Tensor::ones(vec![2, 3], Cpu, DType::F32);
+        assert_eq!(tensor.get(vec![1, 1]), Some(1))
     }
 
+    #[test]
     fn test_fill() {
         let tensor = Tensor::fill(vec![2, 3], 5.0, Cpu, DType::F32);
+        assert_eq!(tensor.get(vec![1, 1]), Some(5.0))
     }
 
     #[test]
@@ -295,6 +299,7 @@ mod tests {
         let t_a = Tensor::ones(vec![2, 3], Cpu, DType::F32);
         let t_b = Tensor::ones(vec![2, 3], Cpu, DType::F32);
         let add = t_a.add(&t_b);
+        assert_eq!(add.get(vec![1, 1]), Some(2));
     }
 
     #[test]
