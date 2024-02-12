@@ -105,8 +105,8 @@ impl Tensor {
     }
 
     pub fn add(&self, rhs: &Self) -> Self {
-        let lhs_read = self.0.data.read().unwrap();
-        let rhs_read = rhs.0.data.read().unwrap();
+        let lhs_read = self.backend_ref();
+        let rhs_read = rhs.backend_ref();
         let added = (*lhs_read).add(&*rhs_read);
 
         let add_unwrap = match added {
@@ -126,12 +126,12 @@ impl Tensor {
     }
 
     pub fn sub(&self, rhs: &Self) -> Self {
-        let lhs_read = self.0.data.read().unwrap();
-        let rhs_read = rhs.0.data.read().unwrap();
+        let lhs_read = self.backend_ref();
+        let rhs_read = rhs.backend_ref();
         let data = (*lhs_read).sub(&*rhs_read).expect("Could not perform Sub!");
 
         Tensor(Arc::new(Tensor_ {
-            op: Op::Add(self.clone(), rhs.clone()),
+            op: Op::Sub(self.clone(), rhs.clone()),
             data: Arc::new(RwLock::new(data)),
             is_mutable: false,
             shape: self.0.shape.clone(),
@@ -142,12 +142,12 @@ impl Tensor {
     }
 
     pub fn mul(&self, rhs: &Self) -> Self {
-        let lhs_read = self.0.data.read().unwrap();
-        let rhs_read = rhs.0.data.read().unwrap();
+        let lhs_read = self.backend_ref();
+        let rhs_read = rhs.backend_ref();
         let data = (*lhs_read).mul(&*rhs_read).expect("Could not perform Mul!");
 
         Tensor(Arc::new(Tensor_ {
-            op: Op::Add(self.clone(), rhs.clone()),
+            op: Op::Mul(self.clone(), rhs.clone()),
             data: Arc::new(RwLock::new(data)),
             is_mutable: false,
             shape: self.0.shape.clone(),
@@ -163,7 +163,7 @@ impl Tensor {
         let data = (*lhs_read).div(&*rhs_read).expect("Could not perform Div!");
 
         Tensor(Arc::new(Tensor_ {
-            op: Op::Add(self.clone(), rhs.clone()),
+            op: Op::Div(self.clone(), rhs.clone()),
             data: Arc::new(RwLock::new(data)),
             is_mutable: false,
             shape: self.0.shape.clone(),
@@ -172,12 +172,6 @@ impl Tensor {
             id: Self::uuid(),
         }))
     }
-
-    // pub fn to_scalar<T: Num + Copy>(&self) -> T {
-    //     if self.shape() == vec![1] {
-    //         self.backend_ref().get()
-    //     }
-    // }
 
     pub fn get<T: Num + Copy + NumCast>(&self, index: Vec<usize>) -> Option<T> {
         self.backend_ref().get(index)
@@ -229,10 +223,18 @@ impl Tensor {
                     *rhs_grad = rhs_grad.add(&grad);
                 },
                 Op::Sub(lhs, rhs) => {
-
+                    let lhs_grad = grads.get_or(&lhs);
+                    *lhs_grad = lhs_grad.add(&grad);
+                    let rhs_grad = grads.get_or(&rhs);
+                    *rhs_grad = rhs_grad.sub(&grad);
                 },
                 Op::Mul(lhs, rhs) => {
-
+                    let lhs_grad = grad.mul(&rhs);
+                    let lhs_sum_grad = grads.get_or(&lhs);
+                    *lhs_sum_grad = lhs_sum_grad.add(&lhs_grad);
+                    let rhs_grad = grad.mul(&lhs);
+                    let rhs_sum_grad = grads.get_or(&rhs);
+                    *rhs_sum_grad = rhs_sum_grad.add(&rhs_grad);
                 },
                 Op::Div(lhs, rhs) => {
 
@@ -266,6 +268,7 @@ pub struct Parameter(Tensor);
 
 #[cfg(test)]
 mod tests {
+    use std::ptr::eq;
     use super::*;
 
     #[test]
@@ -289,7 +292,6 @@ mod tests {
     #[test]
     fn test_get() {
         let tensor = Tensor::ones(vec![2, 3], Cpu, DType::F32);
-
         assert_eq!(tensor.get(vec![1, 1]), Some(1));
         assert_eq!(tensor.get::<f32>(vec![10, 10]), None);
     }
@@ -313,11 +315,32 @@ mod tests {
     }
 
     #[test]
-    fn test_backward() {
+    fn test_backward_add() {
         let tensor_a = Tensor::ones(vec![2, 3], Cpu, DType::F32);
-        let tensor_b = Tensor::ones(vec![2, 3], Cpu, DType::F32);
+        let tensor_b = Tensor::fill(vec![2, 3], 5.0, Cpu, DType::F32);
         let added = tensor_a.add(&tensor_b);
         let gradients = added.backward();
-        println!("Hello!")
+        assert_eq!(gradients.get(&tensor_a).unwrap().get(vec![1, 1]), Some(1));
+        assert_eq!(gradients.get(&tensor_b).unwrap().get(vec![1, 1]), Some(1));
+    }
+
+    #[test]
+    fn test_backward_sub() {
+        let tensor_a = Tensor::ones(vec![2, 3], Cpu, DType::F32);
+        let tensor_b = Tensor::fill(vec![2, 3], 5.0, Cpu, DType::F32);
+        let subtracted = tensor_a.sub(&tensor_b);
+        let gradients = subtracted.backward();
+        assert_eq!(gradients.get(&tensor_a).unwrap().get(vec![1, 1]), Some(1));
+        assert_eq!(gradients.get(&tensor_b).unwrap().get(vec![1, 1]), Some(-1));
+    }
+
+    #[test]
+    fn test_backward_mul() {
+        let tensor_a = Tensor::fill(vec![2, 3], 5.0, Cpu, DType::F32);
+        let tensor_b = Tensor::fill(vec![2, 3], 3.0, Cpu, DType::F32);
+        let multiplied = tensor_a.mul(&tensor_b);
+        let gradients = multiplied.backward();
+        assert_eq!(gradients.get(&tensor_a).unwrap().get(vec![1, 1]), Some(3));
+        assert_eq!(gradients.get(&tensor_b).unwrap().get(vec![1, 1]), Some(5));
     }
 }
