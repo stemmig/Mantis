@@ -1,4 +1,5 @@
 use std::sync::RwLockReadGuard;
+use num_traits::{Num, NumCast};
 use crate::array::{CpuArray};
 use crate::backend::BackendData::{Metal, Cpu};
 use crate::DType;
@@ -61,5 +62,13 @@ impl Data for BackendData {
             _ => None
         };
         addition
+    }
+
+    fn get<T: Num + Copy + NumCast>(&self, index: Vec<usize>) -> Option<T> {
+        let val= match self {
+            Cpu(arr) => arr.get(index),
+            _ => None
+        };
+        val
     }
 }

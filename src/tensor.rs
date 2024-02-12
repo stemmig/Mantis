@@ -1,7 +1,8 @@
 use std::collections::{HashMap, VecDeque};
 use std::fmt::{Debug};
 use std::ops::Deref;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, RwLock, RwLockReadGuard};
+use num_traits::{Num, NumCast};
 use uuid::{Uuid};
 use crate::array::{CpuArray};
 use crate::operations::{ Op};
@@ -30,6 +31,7 @@ pub trait Data where Self: Sized {
     fn sub(&self, rhs: &Self) -> Option<Self>;
     fn mul(&self, rhs: &Self) -> Option<Self>;
     fn div(&self, rhs: &Self) -> Option<Self>;
+    fn get<T: Num + Copy + NumCast>(&self, index: Vec<usize>) -> Option<T>;
 
 }
 
@@ -156,8 +158,8 @@ impl Tensor {
     }
 
     pub fn div(&self, rhs: &Self) -> Self {
-        let lhs_read = self.0.data.read().unwrap();
-        let rhs_read = rhs.0.data.read().unwrap();
+        let lhs_read = self.backend_ref();
+        let rhs_read = rhs.backend_ref();
         let data = (*lhs_read).div(&*rhs_read).expect("Could not perform Div!");
 
         Tensor(Arc::new(Tensor_ {
@@ -169,6 +171,20 @@ impl Tensor {
             dtype: self.0.dtype.clone(),
             id: Self::uuid(),
         }))
+    }
+
+    // pub fn to_scalar<T: Num + Copy>(&self) -> T {
+    //     if self.shape() == vec![1] {
+    //         self.backend_ref().get()
+    //     }
+    // }
+
+    pub fn get<T: Num + Copy + NumCast>(&self, index: Vec<usize>) -> Option<T> {
+        self.backend_ref().get(index)
+    }
+
+    fn backend_ref(&self) -> RwLockReadGuard<BackendData> {
+        self.0.data.read().unwrap()
     }
 
     fn topo_sort(&self) -> Vec<Tensor> {
@@ -260,6 +276,25 @@ mod tests {
     #[test]
     fn test_ones() {
         let tensor = Tensor::ones(vec![2, 3], Cpu, DType::F32);
+    }
+
+    fn test_fill() {
+        let tensor = Tensor::fill(vec![2, 3], 5.0, Cpu, DType::F32);
+    }
+
+    #[test]
+    fn test_get() {
+        let tensor = Tensor::ones(vec![2, 3], Cpu, DType::F32);
+
+        assert_eq!(tensor.get(vec![1, 1]), Some(1));
+        assert_eq!(tensor.get::<f32>(vec![10, 10]), None);
+    }
+
+    #[test]
+    fn test_addition() {
+        let t_a = Tensor::ones(vec![2, 3], Cpu, DType::F32);
+        let t_b = Tensor::ones(vec![2, 3], Cpu, DType::F32);
+        let add = t_a.add(&t_b);
     }
 
     #[test]

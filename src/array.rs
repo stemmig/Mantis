@@ -1,8 +1,8 @@
 use std::ops::{Add, Div, Mul, Sub};
 use ndarray::{Array, Dimension, IxDyn};
+use num_traits::{Num, NumCast};
 use crate::array::CpuArray::{F32Array, F64Array};
 use crate::DType;
-use crate::tensor::Data;
 
 pub enum CpuArray
 {
@@ -63,6 +63,17 @@ impl CpuArray
             (F32Array(ref a), F32Array(ref b)) => {
                 Some(F32Array(a.div(b)))
             }
+            _ => None
+        }
+    }
+
+    pub fn get<T: Num + Copy + NumCast>(&self, index: Vec<usize>) -> Option<T> {
+        let val = match self {
+            F32Array(arr) => arr.get(IxDyn(&index)).cloned(),
+            _ => None
+        };
+        match val {
+          Some(n) => NumCast::from(n),
             _ => None
         }
     }
