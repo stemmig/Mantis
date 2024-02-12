@@ -65,6 +65,22 @@ impl Data for BackendData {
         addition
     }
 
+    fn matmul(&self, rhs: &Self) -> Result<Self, String> {
+        todo!()
+    }
+
+    fn relu(&self) -> Option<Self> {
+        todo!()
+    }
+
+    fn exp(&self) -> Option<Self> {
+        todo!()
+    }
+
+    fn sum(&self, dims: Vec<usize>) -> Option<Self> {
+        todo!()
+    }
+
     fn get<T: Num + Copy + NumCast>(&self, index: Vec<usize>) -> Option<T> {
         let val= match self {
             Cpu(arr) => arr.get(index),

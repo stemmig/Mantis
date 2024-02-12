@@ -68,6 +68,10 @@ impl CpuArray
         }
     }
 
+    pub fn matmul(&self, rhs: &Self) -> Result<Self, String> {
+        todo!()
+    }
+
     pub fn get<T: Num + Copy + NumCast>(&self, index: Vec<usize>) -> Option<T> {
         let val = match self {
             F32Array(arr) => arr.get(IxDyn(&index)).cloned(),

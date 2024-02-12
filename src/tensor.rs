@@ -28,10 +28,23 @@ pub trait Data where Self: Sized {
     fn ones(&self, shape: Vec<usize>, dtype: DType) -> Self;
 
     fn add(&self, rhs: &Self) -> Option<Self>;
+
     fn sub(&self, rhs: &Self) -> Option<Self>;
+
     fn mul(&self, rhs: &Self) -> Option<Self>;
+
     fn div(&self, rhs: &Self) -> Option<Self>;
+
+    fn matmul(&self, rhs: &Self) -> Result<Self, String>;
+
+    fn relu(&self) -> Option<Self>;
+
+    fn exp(&self) -> Option<Self>;
+
+    fn sum(&self, dims: Vec<usize>) -> Option<Self>;
+
     fn get<T: Num + Copy + NumCast>(&self, index: Vec<usize>) -> Option<T>;
+
     fn copy_from(&mut self, other: &Self) -> ();
 }
 
@@ -173,6 +186,44 @@ impl Tensor {
         }))
     }
 
+    pub fn matmul(&self, rhs: &Self) -> Result<Self, String> {
+        /*
+            (a) @ (b)               => (1)       | a == b
+            (a) @ (b, c)            => (c)          | a == b
+            (a) @ (b, c, d)         => (b, d)       | a == c
+            (a, b) @ (c)            => (a)          | b == c
+            (a, b) @ (c, d)         => (a, d)       | b == c
+            (a, b) @ (c, d, e)      => (c, a, e)    | b == d
+            (a, b, c) @ (d)         => (a, b)       | c == d
+            (a, b, c) @ (d, e)      => (a, b, e)    | c == d
+            (a, b, c) @ (d, e, f)   => (a, b, f)    | c == e && a == d
+         */
+        let err_message = format!("Expected tensor shapes did not match {:?} @ {:?}", self.shape(), rhs.shape());
+        let shape: Vec<usize> = match (self.shape().as_slice(), rhs.shape().as_slice()) {
+            (&[a], &[b])                                              if a == b => vec![1],
+            (&[a], &[b, c])                                   if a == b => vec![c],
+            (&[a], &[b, c, d])                        if a == c => vec![b, d],
+            (&[a, b], &[c])                                   if b == c => vec![a],
+            (&[a, b], &[c, d])                        if b == c => vec![a, d],
+            (&[a, b], &[c, d, e])             if b == d => vec![c, a, e],
+            (&[a, b, c], &[d])                        if c == d => vec![a, b],
+            (&[a, b, c], &[d, e])             if c == d => vec![a, b, e],
+            (&[a, b, c], &[d, e, f])  if c == d => vec![a, b, f],
+            _ => return Err(err_message)
+        };
+
+        let data = (*self.backend_ref()).matmul(&*rhs.backend_ref()).expect("Could not perform MatMul operation!");
+        Ok(Tensor(Arc::new(Tensor_ {
+            op: Op::MatMul(self.clone(), rhs.clone()),
+            data: Arc::new(RwLock::new(data)),
+            is_mutable: false,
+            shape: shape.clone(),
+            backend: self.0.backend.clone(),
+            dtype: self.0.dtype.clone(),
+            id: Self::uuid(),
+        })))
+    }
+
     pub fn get<T: Num + Copy + NumCast>(&self, index: Vec<usize>) -> Option<T> {
         self.backend_ref().get(index)
     }
@@ -204,7 +255,11 @@ impl Tensor {
                     queue.push_back(lhs.clone());
                     queue.push_back(rhs.clone());
                 },
-                Op::None => ()
+                Op::None => (),
+                Op::MatMul(_, _) => {}
+                Op::ReLU(_) => {}
+                Op::Exp(_) => {}
+                Op::Sum(_, _) => {}
             }
         }
         sorted
@@ -247,6 +302,10 @@ impl Tensor {
                 Op::None => {
 
                 }
+                Op::MatMul(lhs, rhs) => {}
+                Op::ReLU(tensor) => {}
+                Op::Exp(tensor) => {}
+                Op::Sum(tensor, dims) => {}
             }
         }
         grads
@@ -268,8 +327,6 @@ impl Tensor {
         self.0.dtype.clone()
     }
 }
-
-pub struct Parameter(Tensor);
 
 #[cfg(test)]
 mod tests {
