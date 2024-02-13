@@ -66,7 +66,10 @@ impl Data for BackendData {
     }
 
     fn matmul(&self, rhs: &Self) -> Result<Self, String> {
-        todo!()
+        match (self, rhs) {
+            (Cpu(lhs), Cpu(rhs) ) => Ok(Cpu((*lhs).matmul(rhs)?)),
+            _ => Err(String::from("Could not perform MatMul for this backend type."))
+        }
     }
 
     fn relu(&self) -> Option<Self> {
