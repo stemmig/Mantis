@@ -1,5 +1,6 @@
 use std::ops::{Add, Div, Mul, Sub};
-use ndarray::{Array, Dimension, IxDyn};
+use ndarray::{Array, ArrayD, Dimension, Ix1, Ix2, IxDyn, Dim, ArrayBase, OwnedRepr, Array2, Array1};
+use ndarray::linalg::Dot;
 use num_traits::{Num, NumCast};
 use crate::array::CpuArray::{F32Array, F64Array};
 use crate::backend::BackendData;
@@ -7,8 +8,8 @@ use crate::DType;
 
 pub enum CpuArray
 {
-    F32Array(Array<f32, IxDyn>),
-    F64Array(Array<f64, IxDyn>),
+    F32Array(ArrayD<f32>),
+    F64Array(ArrayD<f64>),
 }
 
 impl CpuArray
@@ -69,7 +70,14 @@ impl CpuArray
     }
 
     pub fn matmul(&self, rhs: &Self) -> Result<Self, String> {
-        todo!()
+        match (self, rhs) {
+            (F32Array(a), F32Array(b)) => {
+                let res = a.clone().into_dimensionality::<Ix1>().unwrap().dot(&b.clone().into_dimensionality::<Ix1>().unwrap());
+                let wrapped = F32Array(Array1::from_vec(vec![res]).into_dyn());
+                Ok(wrapped)
+            },
+            _ => Err(String::from("Cannot MatMul for the provided data types"))
+        }
     }
 
     pub fn get<T: Num + Copy + NumCast>(&self, index: Vec<usize>) -> Option<T> {
@@ -88,5 +96,19 @@ impl CpuArray
             (F32Array(arr1), F32Array(arr2)) => arr1.assign(arr2),
             _ => ()
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use ndarray::{Array, IxDyn};
+    use crate::array::CpuArray::F32Array;
+
+    #[test]
+    fn test_matmul_1x1() {
+        let cpua1 = F32Array(Array::from_elem(IxDyn(&vec![1]), 5.0f32));
+        let cpua2 = F32Array(Array::from_elem(IxDyn(&vec![1]), 3.0f32));
+        let cpu_prod = cpua1.matmul(&cpua2);
+        assert_eq!(cpu_prod.unwrap().get(vec![0]), Some(15f32))
     }
 }

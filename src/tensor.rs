@@ -188,7 +188,7 @@ impl Tensor {
 
     pub fn matmul(&self, rhs: &Self) -> Result<Self, String> {
         /*
-            (a) @ (b)               => (1)       | a == b
+            (a) @ (b)               => (1)          | a == b
             (a) @ (b, c)            => (c)          | a == b
             (a) @ (b, c, d)         => (b, d)       | a == c
             (a, b) @ (c)            => (a)          | b == c
@@ -200,19 +200,20 @@ impl Tensor {
          */
         let err_message = format!("Expected tensor shapes did not match {:?} @ {:?}", self.shape(), rhs.shape());
         let shape: Vec<usize> = match (self.shape().as_slice(), rhs.shape().as_slice()) {
-            (&[a], &[b])                                              if a == b => vec![1],
-            (&[a], &[b, c])                                   if a == b => vec![c],
-            (&[a], &[b, c, d])                        if a == c => vec![b, d],
-            (&[a, b], &[c])                                   if b == c => vec![a],
-            (&[a, b], &[c, d])                        if b == c => vec![a, d],
-            (&[a, b], &[c, d, e])             if b == d => vec![c, a, e],
-            (&[a, b, c], &[d])                        if c == d => vec![a, b],
-            (&[a, b, c], &[d, e])             if c == d => vec![a, b, e],
+            (&[a], &[b])                                          if a == b => vec![1],
+            (&[a], &[b, c])                                if a == b => vec![c],
+            (&[a], &[b, c, d])                      if a == c => vec![b, d],
+            (&[a, b], &[c])                                if b == c => vec![a],
+            (&[a, b], &[c, d])                      if b == c => vec![a, d],
+            (&[a, b], &[c, d, e])            if b == d => vec![c, a, e],
+            (&[a, b, c], &[d])                      if c == d => vec![a, b],
+            (&[a, b, c], &[d, e])            if c == d => vec![a, b, e],
             (&[a, b, c], &[d, e, f])  if c == d => vec![a, b, f],
             _ => return Err(err_message)
         };
 
         let data = (*self.backend_ref()).matmul(&*rhs.backend_ref()).expect("Could not perform MatMul operation!");
+
         Ok(Tensor(Arc::new(Tensor_ {
             op: Op::MatMul(self.clone(), rhs.clone()),
             data: Arc::new(RwLock::new(data)),
@@ -360,10 +361,20 @@ mod tests {
 
     #[test]
     fn test_addition() {
-        let t_a = Tensor::ones(vec![2, 3], Cpu, DType::F32);
-        let t_b = Tensor::ones(vec![2, 3], Cpu, DType::F32);
-        let add = t_a.add(&t_b);
+        let tensor_a = Tensor::ones(vec![2, 3], Cpu, DType::F32);
+        let tensor_b = Tensor::ones(vec![2, 3], Cpu, DType::F32);
+        let add = tensor_a.add(&tensor_b);
         assert_eq!(add.get(vec![1, 1]), Some(2));
+    }
+
+
+    #[test]
+    fn test_matmul() {
+        let tensor_a = Tensor::fill(vec![2, 3], 5.0, Cpu, DType::F32);
+        let tensor_b = Tensor::fill(vec![3, 4], 3.0, Cpu, DType::F32);
+        let matmul = tensor_a.matmul(&tensor_b).unwrap();
+        assert_eq!(matmul.shape(), vec![2, 4]);
+        assert_eq!(matmul.get(vec![1, 1]), Some(45.0));
     }
 
     #[test]
