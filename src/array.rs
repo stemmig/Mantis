@@ -1,9 +1,8 @@
 use std::ops::{Add, Div, Mul, Sub};
-use ndarray::{Array, ArrayD, Dimension, Ix1, Ix2, IxDyn, Dim, ArrayBase, OwnedRepr, Array2, Array1};
+use ndarray::{Array, ArrayD, Dimension, Ix1, IxDyn, Array1, Ix2, Array2};
 use ndarray::linalg::Dot;
 use num_traits::{Num, NumCast};
 use crate::array::CpuArray::{F32Array, F64Array};
-use crate::backend::BackendData;
 use crate::DType;
 
 pub enum CpuArray
@@ -71,11 +70,15 @@ impl CpuArray
 
     pub fn matmul(&self, rhs: &Self) -> Result<Self, String> {
         match (self, rhs) {
-            (F32Array(a), F32Array(b)) => {
-                let res = a.clone().into_dimensionality::<Ix1>().unwrap().dot(&b.clone().into_dimensionality::<Ix1>().unwrap());
+            (F32Array(l), F32Array(r)) if l.ndim() == 1 && l.ndim() == 1 => {
+                let res = l.clone().into_dimensionality::<Ix1>().unwrap().dot(&r.clone().into_dimensionality::<Ix1>().unwrap());
                 let wrapped = F32Array(Array1::from_vec(vec![res]).into_dyn());
                 Ok(wrapped)
             },
+            (F32Array(l), F32Array(r)) if l.ndim() == 2 && l.ndim() == 2 => {
+                let res = l.clone().into_dimensionality::<Ix2>().unwrap().dot(&r.clone().into_dimensionality::<Ix2>().unwrap());
+                Ok(F32Array(res.into_dyn()))
+            }
             _ => Err(String::from("Cannot MatMul for the provided data types"))
         }
     }
@@ -97,6 +100,13 @@ impl CpuArray
             _ => ()
         }
     }
+
+    pub fn shape(&self) -> Vec<usize> {
+        match self {
+            F32Array(arr) => arr.shape().to_vec(),
+            F64Array(arr) => arr.shape().to_vec(),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -110,5 +120,14 @@ mod tests {
         let cpua2 = F32Array(Array::from_elem(IxDyn(&vec![1]), 3.0f32));
         let cpu_prod = cpua1.matmul(&cpua2);
         assert_eq!(cpu_prod.unwrap().get(vec![0]), Some(15f32))
+    }
+
+    #[test]
+    fn test_matmul_2x2() {
+        let arr1 = F32Array(Array::from_elem(IxDyn(&vec![2, 3]), 5.0f32));
+        let arr2 = F32Array(Array::from_elem(IxDyn(&vec![3, 5]), 3.0f32));
+        let cpu_prod = arr1.matmul(&arr2).unwrap();
+        assert_eq!(cpu_prod.get(vec![1,1]), Some(45f32));
+        assert_eq!(cpu_prod.shape(), vec![2, 5]);
     }
 }
