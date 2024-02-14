@@ -1,9 +1,10 @@
 use std::ops::{Add, Div, Mul, Sub};
-use ndarray::{Array, ArrayD, Dimension, Ix1, IxDyn, Array1, Ix2, Array2};
+use ndarray::{Array, ArrayD, Dimension, Ix1, IxDyn, Array1, Ix2, Array2, Axis};
 use ndarray::linalg::Dot;
 use num_traits::{Num, NumCast};
 use crate::array::CpuArray::{F32Array, F64Array};
 use crate::DType;
+use crate::DType::F32;
 
 pub enum CpuArray
 {
@@ -90,6 +91,27 @@ impl CpuArray
         }
     }
 
+    pub fn sum(&self, dims: Vec<usize>) -> Result<Self, String> {
+        match self {
+            F32Array(ref arr) if dims.is_empty() => Ok(F32Array(Array::from_elem(IxDyn(&vec![1]), arr.sum()))) ,
+            F32Array(ref arr) => {
+                // Shift axes to reduce on, since ArrayBase::sum_axis removes an axis on each invocation
+                let shifted_axes: Vec<usize> = dims.iter().enumerate()
+                    .map(|(i, &value)| value.saturating_sub(i))
+                    .collect();
+
+                let mut summed_arr = arr.clone();
+
+                for axis in &shifted_axes {
+                    summed_arr = summed_arr.sum_axis(Axis(*axis))
+                }
+
+                Ok(F32Array(summed_arr))
+            },
+            _ => Err(String::from("Not able to sum all fields for data type"))
+        }
+    }
+
     pub fn get<T: Num + Copy + NumCast>(&self, index: Vec<usize>) -> Option<T> {
         let val = match self {
             F32Array(arr) => arr.get(IxDyn(&index)).cloned(),
@@ -149,4 +171,19 @@ mod tests {
         let relu_pos = arr_pos.relu().unwrap().get(vec![1, 1]).unwrap();
         assert_eq!((relu_neg, relu_zero, relu_pos), (0, 0, 5.0));
     }
+
+    #[test]
+    fn test_sum_all(){
+        let arr = F32Array(Array::from_elem(IxDyn(&vec![2, 3]), 5.0f32));
+        let sum_all = arr.sum(vec![]).unwrap();
+        assert_eq!(sum_all.shape(), vec![1]);
+        assert_eq!(sum_all.get(vec![0]), Some(6.0 * 5.0));
+    }
+
+    // #[test]
+    // fn test_sum(){
+    //     let arr = F32Array(Array::from_elem(IxDyn(&vec![2, 3]), 5.0f32));
+    //     let sum = arr.sum();
+    //
+    // }
 }
