@@ -37,11 +37,11 @@ pub trait Data where Self: Sized {
 
     fn matmul(&self, rhs: &Self) -> Result<Self, String>;
 
-    fn relu(&self) -> Option<Self>;
+    fn relu(&self) -> Result<Self, String>;
 
-    fn exp(&self) -> Option<Self>;
+    fn exp(&self) -> Result<Self, String>;
 
-    fn sum(&self, dims: Vec<usize>) -> Option<Self>;
+    fn sum(&self, dims: Vec<usize>) -> Result<Self, String>;
 
     fn get<T: Num + Copy + NumCast>(&self, index: Vec<usize>) -> Option<T>;
 
@@ -223,6 +223,53 @@ impl Tensor {
             dtype: self.0.dtype.clone(),
             id: Self::uuid(),
         })))
+    }
+
+    pub fn relu(&self) -> Result<Self, String> {
+        let data = (*self.backend_ref()).relu().expect("Could not perform ReLU operation!");
+
+        Ok(Tensor(Arc::new(Tensor_ {
+            op: Op::ReLU(self.clone()),
+            data: Arc::new(RwLock::new(data)),
+            is_mutable: false,
+            shape: self.0.shape.clone(),
+            backend: self.0.backend.clone(),
+            dtype: self.0.dtype.clone(),
+            id: Self::uuid(),
+        })))
+    }
+
+    pub fn exp(&self) -> Result<Self, String> {
+        let data = (*self.backend_ref()).exp().expect("Could not perform EXP operation!");
+
+        Ok(Tensor(Arc::new(Tensor_ {
+            op: Op::Exp(self.clone()),
+            data: Arc::new(RwLock::new(data)),
+            is_mutable: false,
+            shape: self.0.shape.clone(),
+            backend: self.0.backend.clone(),
+            dtype: self.0.dtype.clone(),
+            id: Self::uuid(),
+        })))
+    }
+
+    pub fn sum(&self, dims: Vec<usize>) -> Result<Self, String> {
+        let sum = (*self.backend_ref()).sum(dims.clone()).expect("Could not perform sum operation!");
+
+        Ok(Tensor(Arc::new(Tensor_ {
+            op: Op::Sum(self.clone(), dims.clone()),
+            data: Arc::new(RwLock::new(sum)),
+            is_mutable: false,
+            shape: self.0.shape.clone(),
+            backend: self.0.backend.clone(),
+            dtype: self.0.dtype.clone(),
+            id: Self::uuid(),
+        })))
+    }
+
+    // Alias for summing all elements in the Tensor
+    pub fn sum_all(&self) -> Result<Self, String> {
+        Self::sum(&self, vec![])
     }
 
     pub fn get<T: Num + Copy + NumCast>(&self, index: Vec<usize>) -> Option<T> {

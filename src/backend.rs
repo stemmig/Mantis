@@ -72,15 +72,15 @@ impl Data for BackendData {
         }
     }
 
-    fn relu(&self) -> Option<Self> {
+    fn relu(&self) -> Result<Self, String> {
         todo!()
     }
 
-    fn exp(&self) -> Option<Self> {
+    fn exp(&self) -> Result<Self, String> {
         todo!()
     }
 
-    fn sum(&self, dims: Vec<usize>) -> Option<Self> {
+    fn sum(&self, dims: Vec<usize>) -> Result<Self, String> {
         todo!()
     }
 
