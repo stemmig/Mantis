@@ -73,11 +73,17 @@ impl Data for BackendData {
     }
 
     fn relu(&self) -> Result<Self, String> {
-        todo!()
+        match self {
+            Cpu(tensor) => Ok(Cpu((*tensor).relu()?)),
+            _ => Err(String::from("Could not calculate ReLU for provided backend type"))
+        }
     }
 
     fn exp(&self) -> Result<Self, String> {
-        todo!()
+        match self {
+            // Cpu(tensor) => Ok(Cpu((*tensor).exp()?)),
+            _ => Err(String::from("Could not calculate ReLU for provided backend type"))
+        }
     }
 
     fn sum(&self, dims: Vec<usize>) -> Result<Self, String> {

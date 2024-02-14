@@ -83,6 +83,13 @@ impl CpuArray
         }
     }
 
+    pub fn relu(&self) -> Result<Self, String> {
+        match self {
+            F32Array(ref arr) => Ok(F32Array(arr.mapv(|x| x.max(0.0)))),
+            _ => Err(String::from("Cannot ReLU for the provided data types")),
+        }
+    }
+
     pub fn get<T: Num + Copy + NumCast>(&self, index: Vec<usize>) -> Option<T> {
         let val = match self {
             F32Array(arr) => arr.get(IxDyn(&index)).cloned(),
@@ -113,6 +120,7 @@ impl CpuArray
 mod tests {
     use ndarray::{Array, IxDyn};
     use crate::array::CpuArray::F32Array;
+    use crate::DType::F32;
 
     #[test]
     fn test_matmul_1x1() {
@@ -129,5 +137,16 @@ mod tests {
         let cpu_prod = arr1.matmul(&arr2).unwrap();
         assert_eq!(cpu_prod.get(vec![1,1]), Some(45f32));
         assert_eq!(cpu_prod.shape(), vec![2, 5]);
+    }
+
+    #[test]
+    fn test_relu(){
+        let arr_neg = F32Array(Array::from_elem(IxDyn(&vec![2, 3]), -1.0f32));
+        let arr_zero = F32Array(Array::zeros(IxDyn(&vec![2, 3])));
+        let arr_pos = F32Array(Array::from_elem(IxDyn(&vec![2, 3]), 5.0f32));
+        let relu_neg = arr_neg.relu().unwrap().get(vec![1, 1]).unwrap();
+        let relu_zero = arr_zero.relu().unwrap().get(vec![1, 1]).unwrap();
+        let relu_pos = arr_pos.relu().unwrap().get(vec![1, 1]).unwrap();
+        assert_eq!((relu_neg, relu_zero, relu_pos), (0, 0, 5.0));
     }
 }
