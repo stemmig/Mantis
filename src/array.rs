@@ -91,6 +91,13 @@ impl CpuArray
         }
     }
 
+    pub fn exp(&self) -> Result<Self, String> {
+        match self {
+            F32Array(ref arr) => Ok(F32Array(arr.mapv(|x| x.exp()))),
+            _ => Err(String::from("Cannot exp for the provided data types")),
+        }
+    }
+
     pub fn sum(&self, dims: Vec<usize>) -> Result<Self, String> {
         match self {
             F32Array(ref arr) if dims.is_empty() => Ok(F32Array(Array::from_elem(IxDyn(&vec![1]), arr.sum()))) ,
@@ -173,6 +180,17 @@ mod tests {
         let relu_zero = arr_zero.relu().unwrap().get(vec![1, 1]).unwrap();
         let relu_pos = arr_pos.relu().unwrap().get(vec![1, 1]).unwrap();
         assert_eq!((relu_neg, relu_zero, relu_pos), (0, 0, 5.0));
+    }
+
+    #[test]
+    fn test_exp(){
+        let arr_neg = F32Array(Array::from_elem(IxDyn(&vec![2, 3]), -1.0f32));
+        let arr_zero = F32Array(Array::zeros(IxDyn(&vec![2, 3])));
+        let arr_pos = F32Array(Array::from_elem(IxDyn(&vec![2, 3]), 5.0f32));
+        let exp_neg = arr_neg.exp().unwrap().get(vec![1, 1]).unwrap();
+        let exp_zero = arr_zero.exp().unwrap().get(vec![1, 1]).unwrap();
+        let exp_pos = arr_pos.exp().unwrap().get(vec![1, 1]).unwrap();
+        assert_eq!((exp_neg, exp_zero, exp_pos), (0.36787945032119751, 1.0, 148.41316223144531));
     }
 
     #[test]
