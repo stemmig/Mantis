@@ -95,12 +95,15 @@ impl CpuArray
         match self {
             F32Array(ref arr) if dims.is_empty() => Ok(F32Array(Array::from_elem(IxDyn(&vec![1]), arr.sum()))) ,
             F32Array(ref arr) => {
+
+                let mut axes = dims.clone();
+                let mut summed_arr = arr.clone();
+                axes.sort();
+
                 // Shift axes to reduce on, since ArrayBase::sum_axis removes an axis on each invocation
-                let shifted_axes: Vec<usize> = dims.iter().enumerate()
+                let shifted_axes: Vec<usize> = axes.iter().enumerate()
                     .map(|(i, &value)| value.saturating_sub(i))
                     .collect();
-
-                let mut summed_arr = arr.clone();
 
                 for axis in &shifted_axes {
                     summed_arr = summed_arr.sum_axis(Axis(*axis))
@@ -180,10 +183,11 @@ mod tests {
         assert_eq!(sum_all.get(vec![0]), Some(6.0 * 5.0));
     }
 
-    // #[test]
-    // fn test_sum(){
-    //     let arr = F32Array(Array::from_elem(IxDyn(&vec![2, 3]), 5.0f32));
-    //     let sum = arr.sum();
-    //
-    // }
+    #[test]
+    fn test_sum(){
+        let arr = F32Array(Array::from_elem(IxDyn(&vec![2, 3, 4]), 5.0f32));
+        let sum = arr.sum(vec![2, 1]).unwrap();
+        assert_eq!(sum.shape(), vec![2]);
+        assert_eq!(sum.get(vec![0]), Some(60f32));
+    }
 }
