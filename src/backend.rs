@@ -90,6 +90,20 @@ impl Data for BackendData {
         todo!()
     }
 
+    fn transpose(&self) -> Result<Self, String> {
+        match self {
+            Cpu(tensor) => Ok(Cpu((*tensor).transpose()?)),
+            _ => Err(String::from("Could not transpose for provided backend type"))
+        }
+    }
+
+    fn shape(&self) -> Vec<usize> {
+        match self {
+            Cpu(tensor) => tensor.shape(),
+            _ => vec![],
+        }
+    }
+
     fn get<T: Num + Copy + NumCast>(&self, index: Vec<usize>) -> Option<T> {
         let val= match self {
             Cpu(arr) => arr.get(index),

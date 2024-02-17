@@ -43,6 +43,10 @@ pub trait Data where Self: Sized {
 
     fn sum(&self, dims: Vec<usize>) -> Result<Self, String>;
 
+    fn transpose(&self) -> Result<Self, String>;
+
+    fn shape(&self) -> Vec<usize>;
+
     fn get<T: Num + Copy + NumCast>(&self, index: Vec<usize>) -> Option<T>;
 
     fn copy_from(&mut self, other: &Self) -> ();
@@ -199,6 +203,7 @@ impl Tensor {
             (a, b, c) @ (d, e, f)   => (a, b, f)    | c == e && a == d
          */
         let err_message = format!("Expected tensor shapes did not match {:?} @ {:?}", self.shape(), rhs.shape());
+
         let shape: Vec<usize> = match (self.shape().as_slice(), rhs.shape().as_slice()) {
             (&[a], &[b])                                          if a == b => vec![1],
             (&[a], &[b, c])                                if a == b => vec![c],
@@ -272,6 +277,21 @@ impl Tensor {
         Self::sum(&self, vec![])
     }
 
+    pub fn transpose(&self) -> Result<Self, String> {
+        let transpose = (*self.backend_ref()).transpose().expect("Could not perform transpose operation!");
+        let t_shaped = transpose.shape().clone();
+
+        Ok(Tensor(Arc::new(Tensor_ {
+            op: Op::Transpose(self.clone()),
+            data: Arc::new(RwLock::new(transpose)),
+            is_mutable: false,
+            shape: t_shaped,
+            backend: self.0.backend.clone(),
+            dtype: self.0.dtype.clone(),
+            id: Self::uuid(),
+        })))
+    }
+
     pub fn get<T: Num + Copy + NumCast>(&self, index: Vec<usize>) -> Option<T> {
         self.backend_ref().get(index)
     }
@@ -297,23 +317,24 @@ impl Tensor {
             let curr_op = curr_tensor.0.op.clone();
             match curr_op {
                 Op::Add(lhs, rhs) | Op::Sub(lhs, rhs)
-                | Op::Mul(lhs, rhs) | Op::Div(lhs, rhs)  => {
+                | Op::Mul(lhs, rhs) | Op::Div(lhs, rhs)
+                | Op::MatMul(lhs, rhs) => {
                     sorted.push(lhs.clone());
                     sorted.push(rhs.clone());
                     queue.push_back(lhs.clone());
                     queue.push_back(rhs.clone());
                 },
+                Op::Transpose(_) => {},
                 Op::None => (),
-                Op::MatMul(_, _) => {}
-                Op::ReLU(_) => {}
-                Op::Exp(_) => {}
+                Op::ReLU(_) => {},
+                Op::Exp(_) => {},
                 Op::Sum(_, _) => {}
             }
         }
         sorted
     }
 
-    pub fn backward(&self) -> Gradients {
+    pub fn backward(&self) -> Result<Gradients, String> {
         let mut grads = Gradients::new(self);
         let nodes = self.topo_sort();
 
@@ -350,13 +371,22 @@ impl Tensor {
                 Op::None => {
 
                 }
-                Op::MatMul(lhs, rhs) => {}
+                Op::MatMul(lhs, rhs) => {
+                    let lhs_grad = grad.matmul(&rhs.transpose().unwrap()).unwrap();
+                    let lhs_sum_grad = grads.get_or(&lhs);
+                    *lhs_sum_grad = lhs_sum_grad.add(&lhs_grad);
+
+                    let rhs_grad = grad.transpose().unwrap().matmul(&lhs).unwrap();
+                    let rhs_sum_grad = grads.get_or(&rhs);
+                    *rhs_sum_grad = rhs_sum_grad.add(&rhs_grad.transpose().unwrap());
+                }
+                Op::Transpose(tensor) => {}
                 Op::ReLU(tensor) => {}
                 Op::Exp(tensor) => {}
                 Op::Sum(tensor, dims) => {}
             }
         }
-        grads
+        Ok(grads)
     }
 
     pub fn id(&self) -> u128 {
@@ -439,7 +469,7 @@ mod tests {
         let tensor_a = Tensor::ones(vec![2, 3], Cpu, DType::F32);
         let tensor_b = Tensor::fill(vec![2, 3], 5.0, Cpu, DType::F32);
         let added = tensor_a.add(&tensor_b);
-        let gradients = added.backward();
+        let gradients = added.backward().unwrap();
         assert_eq!(gradients.get(&tensor_a).unwrap().get(vec![1, 1]), Some(1));
         assert_eq!(gradients.get(&tensor_b).unwrap().get(vec![1, 1]), Some(1));
     }
@@ -449,7 +479,7 @@ mod tests {
         let tensor_a = Tensor::ones(vec![2, 3], Cpu, DType::F32);
         let tensor_b = Tensor::fill(vec![2, 3], 5.0, Cpu, DType::F32);
         let subtracted = tensor_a.sub(&tensor_b);
-        let gradients = subtracted.backward();
+        let gradients = subtracted.backward().unwrap();
         assert_eq!(gradients.get(&tensor_a).unwrap().get(vec![1, 1]), Some(1));
         assert_eq!(gradients.get(&tensor_b).unwrap().get(vec![1, 1]), Some(-1));
     }
@@ -459,8 +489,18 @@ mod tests {
         let tensor_a = Tensor::fill(vec![2, 3], 5.0, Cpu, DType::F32);
         let tensor_b = Tensor::fill(vec![2, 3], 3.0, Cpu, DType::F32);
         let multiplied = tensor_a.mul(&tensor_b);
-        let gradients = multiplied.backward();
+        let gradients = multiplied.backward().unwrap();
         assert_eq!(gradients.get(&tensor_a).unwrap().get(vec![1, 1]), Some(3));
         assert_eq!(gradients.get(&tensor_b).unwrap().get(vec![1, 1]), Some(5));
+    }
+
+    #[test]
+    fn test_backward_matmul() {
+        let tensor_a = Tensor::fill(vec![2, 3], 5.0, Cpu, DType::F32);
+        let tensor_b = Tensor::fill(vec![3, 5], 3.0, Cpu, DType::F32);
+        let matmul = tensor_a.matmul(&tensor_b).unwrap();
+        let grads = matmul.backward().unwrap();
+        assert_eq!(grads.get(&tensor_a).unwrap().get(vec![1, 1]), Some(15));
+        assert_eq!(grads.get(&tensor_b).unwrap().get(vec![1, 1]), Some(10));
     }
 }

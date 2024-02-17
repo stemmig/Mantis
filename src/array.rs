@@ -122,6 +122,13 @@ impl CpuArray
         }
     }
 
+    pub fn transpose(&self) -> Result<Self, String> {
+        match self {
+            F32Array(ref arr) => Ok(F32Array(arr.clone().reversed_axes())),
+            _ => Err(String::from("Cannot exp for the provided data types")),
+        }
+    }
+
     pub fn get<T: Num + Copy + NumCast>(&self, index: Vec<usize>) -> Option<T> {
         let val = match self {
             F32Array(arr) => arr.get(IxDyn(&index)).cloned(),

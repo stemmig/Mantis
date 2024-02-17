@@ -14,6 +14,7 @@ pub enum Op {
     // Unary
     ReLU(Tensor),
     Exp(Tensor),
+    Transpose(Tensor),
 
     // Reductions
     Sum(Tensor, Vec<usize>),

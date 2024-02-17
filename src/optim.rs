@@ -55,7 +55,7 @@ mod tests {
         let mut sgd = SGD::new(vec![tensor_a.clone(), tensor_b.clone()]);
         sgd.set_epsilon(0.0001);
         let multiplied = tensor_a.mul(&tensor_b);
-        let gradients = multiplied.backward();
+        let gradients = multiplied.backward().unwrap();
         sgd.step(&gradients);
         assert_eq!(tensor_a.get(vec![1,1]), Some(5.00029993f32));
         assert_eq!(tensor_b.get(vec![1,1]), Some(3.00049996f32));
