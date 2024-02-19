@@ -7,8 +7,15 @@ edition = "2021"
 name = "mantis"
 path = "src/lib.rs"
 
+[workspace]
+members = [
+    ".",
+    "kernels"
+]
+
 [dependencies]
 ndarray = "0.15.6"
 num-traits = "0.2.17"
 uuid = { version = "1.7.0", features = ["v4"] }
 num = "0.4"
+metal = "0.27.0"

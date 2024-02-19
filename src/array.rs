@@ -159,7 +159,6 @@ impl CpuArray
 mod tests {
     use ndarray::{Array, IxDyn};
     use crate::array::CpuArray::F32Array;
-    use crate::DType::F32;
 
     #[test]
     fn test_matmul_1x1() {
